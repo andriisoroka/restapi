@@ -1,19 +1,25 @@
 from flask_restful import Resource,reqparse
+from app.jsoongia import Serializer, relationships
+from flask import request
+
+class UserSerializer(Serializer):
+    ref = 'id'
+    type = 'user'
+    attributes = ['name','email','password']
 
 
 mass = [
-    {"id":1,"name":"Andrii Soroka"},
-    {"id":2,"name":"Uliana Soroka"}
+    {"id":1,"name":"Andrii Soroka","email":'andrii_soroka@ukr.net',"password":'12121dasdsdcd'},
+    {"id":2,"name":"Uliana Soroka","email":"starosta_7@mail.ru","password":'dfhjk4389034kl'}
 ]
 parse_data_model = reqparse.RequestParser()
-parse_data_model.add_argument('id',type=int)
-parse_data_model.add_argument('login',type=str)
-parse_data_model.add_argument('email',type=str)
-parse_data_model.add_argument('password',type=str)
+parse_data_model.add_argument('data',type=dict)
 
 class User(Resource):
     def get(self,id):
-        return mass[0]
+        serializer = UserSerializer()
+        res = serializer.serialize(mass[0],{})
+        return res
 
     def put(self,id):
         return []
@@ -24,9 +30,16 @@ class User(Resource):
 
 class UserList(Resource):
     def get(self):
-        return mass
+        serializer = UserSerializer()
+        res = serializer.serialize(mass,{})
+        return res
 
     def post(self):
-        data = parse_data_model.parse_args()
-        print(data)
-        return []
+        try:
+            id = mass[-1]['id'] + 1
+            newUser = request.get_json(force=True)
+            newUser['data']['id'] = id
+            mass.append({"id":id,"name":newUser['data']['attributes']['name'],"email":newUser['data']['attributes']['email'],"password":newUser['data']['attributes']['password']})
+            return newUser
+        except Exception as e:
+            print(e)
